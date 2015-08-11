@@ -1,0 +1,10 @@
+{
+  "name": "cozy-servicemanager",
+  "version": "0.0.1",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "americano": "0.4.2"
+  }
+}
