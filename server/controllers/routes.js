@@ -1,9 +1,7 @@
-var index = require('./index');
 var services = require('./services');
 
 
 module.exports = {
-    '': {get: index.index},
     'services': {get: services.list},
     /*
      I'm trying to follow REST principles, hence the verb PUT to update the
