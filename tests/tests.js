@@ -29,8 +29,8 @@ describe('ServiceManagerFactory', function () {
             it('should return services', function (done) {
                 var services = serviceManager.getAll(function (services) {
                     should.exists(services);
-                    services.should.be.an.Array;
-                    services.should.not.be.empty;
+                    services.should.be.an.Array();
+                    services.should.not.be.empty();
                     services.length.should.be.above(0);
                     done();
                 });
