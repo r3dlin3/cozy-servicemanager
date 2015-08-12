@@ -7,7 +7,6 @@ var log = printit({
     prefix: 'cozy-servicemanager',
     date: true
 });
-var async = require('async');
 
 var STATUS_STARTED = 'started';
 var STATUS_STOPPED = 'stopped';
@@ -47,7 +46,6 @@ WindowsServiceManager.prototype.mapStatus = function (state) {
         default:
             throw "Unknown status " + state;
     }
-    ;
 };
 
 WindowsServiceManager.prototype.getAll = function (callback) {
@@ -55,7 +53,8 @@ WindowsServiceManager.prototype.getAll = function (callback) {
     var service = {};
     var proc = spawn('sc', [
         'query',
-        'type=', 'service'
+        'type=', 'service',
+        'state=', 'all'
     ]);
     /*  Exemple of output of this command
 
@@ -87,16 +86,17 @@ WindowsServiceManager.prototype.getAll = function (callback) {
         terminal: false
     }).on('line', function (line) {
         log.debug(line);
+        var val;
         if (/^SERVICE_NAME: (.*)/.test(line)) {
-            var val = RegExp.$1
+            val = RegExp.$1;
             log.debug('Service : ' + val);
             service = {name: val};
         } else if (/^DISPLAY_NAME: (.*)/.test(line)) {
-            var val = RegExp.$1
+            val = RegExp.$1;
             log.debug('displayName : ' + val);
             service.displayName = val;
         } else if (/^\s*STATE\s*: (\d)/.test(line)) {
-            var val = RegExp.$1
+            val = RegExp.$1;
             log.debug('Status : ' + val);
             service.status = WindowsServiceManager.prototype.mapStatus(val);
 
@@ -147,12 +147,13 @@ WindowsServiceManager.prototype._getService = function (name, callback) {
         terminal: false
     }).on('line', function (line) {
         log.debug(line);
+        var val;
         if (/^DISPLAY_NAME: (.*)/.test(line)) {
-            var val = RegExp.$1
+            val = RegExp.$1;
             log.debug('displayName : ' + val);
             service.displayName = val;
         } else if (/^\s*STATE\s*: (\d)/.test(line)) {
-            var val = RegExp.$1
+            val = RegExp.$1;
             log.debug('Status : ' + val);
             service.status = WindowsServiceManager.prototype.mapStatus(val);
         }
@@ -229,7 +230,8 @@ WindowsServiceManager.prototype._getConfiguration = function (service, callback)
 WindowsServiceManager.prototype.start = function (name, callback) {
     log.debug('Starting ' + name);
     WindowsServiceManager.prototype._getService(name, function (service, err) {
-        if (err) callback(null, err);
+        if (err) { callback(null, err); return;}
+        if (!service) { callback(null, "Service unknown"); return;}
 
         if (service.status === STATUS_STARTED) {
             log.info("Service " + name + " is already started");
@@ -239,7 +241,7 @@ WindowsServiceManager.prototype.start = function (name, callback) {
         var cmd = 'net start "'+name+'"';
         log.debug('cmd to execure: ', cmd);
 
-        var child = exec(cmd, function(err, stdout, stderr) {
+        exec(cmd, function(err, stdout, stderr) {
             if (err) {
                 callback(err);
             }
@@ -247,7 +249,6 @@ WindowsServiceManager.prototype.start = function (name, callback) {
                 log.info('Service', name, 'started');
                 callback(null);
             }
-            return;
         });
 
     });
@@ -262,10 +263,10 @@ WindowsServiceManager.prototype.stop = function (name, callback) {
             callback(null);
             return;
         }
-        var cmd = 'net stop "'+name+'"';
+        var cmd = 'net stop "' + name + '"';
         log.debug(cmd);
 
-        var child = exec(cmd, function(err, stdout, stderr) {
+        exec(cmd, function (err, stdout, stderr) {
             if (err) {
                 callback(err);
             }
@@ -277,7 +278,7 @@ WindowsServiceManager.prototype.stop = function (name, callback) {
         });
 
     });
-}
+};
 
 
-module.exports = ServiceManagerFactory
+module.exports = ServiceManagerFactory;

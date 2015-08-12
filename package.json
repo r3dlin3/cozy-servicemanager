@@ -1,10 +1,24 @@
 {
   "name": "cozy-servicemanager",
   "version": "0.0.1",
+  "description": "Manage your service in your Cozy",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "americano": "0.4.2"
-  }
+    "americano": "0.4.2",
+    "async": "^1.4.2",
+    "express-validator": "^2.14.2",
+    "printit": "0.1.8"
+  },
+  "devDependencies": {
+    "chai": "3.2.0",
+    "mocha": "2.2.5",
+    "should": "7.0.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/r3dlin3/cozy-servicemanager.git"
+  },
+  "readmeFilename": "README.md"
 }
