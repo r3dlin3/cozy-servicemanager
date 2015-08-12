@@ -117,6 +117,7 @@ WindowsServiceManager.prototype.getDetails = function (name, callback) {
     WindowsServiceManager.prototype._getService(name, function (service, err) {
         if (err) {
             callback(null, err);
+            return;
         }
         WindowsServiceManager.prototype._getConfiguration(service, callback);
     });
