@@ -48,6 +48,12 @@ span.name {
     color: rgb(33,150,243);
 }
 
+md-toast.md-error-toast-theme {
+    background-color: rgb(255, 82, 82);
+}
+
+
+
 @font-face {
     font-family: 'Material Icons';
     font-style: normal;

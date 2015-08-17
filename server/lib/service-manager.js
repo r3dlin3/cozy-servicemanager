@@ -107,7 +107,7 @@ WindowsServiceManager.prototype.getAll = function (callback) {
         // skip everything else
 
     }).on('close', function () {
-        callback(services);
+        callback(services.slice(0,2));
     });
 
 
@@ -216,6 +216,9 @@ WindowsServiceManager.prototype._getConfiguration = function (service, callback)
                     return;
 
             }
+        } else if (/^\s*DISPLAY_NAME\s*: (.*)/.test(line)) {
+            val = RegExp.$1;
+            service.displayName = val;
         }
         // skip everything else
 

@@ -48,10 +48,10 @@
                             class="md-2-line"
                             ng-repeat="service in services"
                             ng-click="toggleFavorite(service)"
+                            ng-disabled="service.status==undefined || service.enable == false"
                             >
                         <md-button class="md-icon-button"
-
-                                   ng-disabled="service.status==undefined"
+                                   ng-disabled="service.status==undefined || service.enable == false"
                                    aria-label="Favoris"
                                 >
                             <md-icon md-font-set="material-icons"
@@ -66,9 +66,12 @@
                             <p>{{ service.displayName }}</p>
                         </div>
                         <md-switch class="md-secondary"
-                                   ng-model="service.isStarted"
+                                   ng-model="service.status"
+                                   ng-true-value="'started'"
+                                   ng-false-value="'stopped'"
                                    ng-disabled="service.status==undefined || service.enable == false"
                                    ng-change="toggle(service)"/>
+
                     </md-list-item>
                 </md-list>
             </md-tab-body>

@@ -3,12 +3,12 @@
     angular
         .module('app.services')
         .controller('svcController', [
-            'svcService','favoriteService', '$log', '$q', '$scope', '$mdToast',
+            'svcService', 'favoriteService', '$log', '$scope', '$mdToast',
 
             SvcController
         ]);
 
-    function SvcController(svcService,favoriteService, $log, $q, $scope, $mdToast) {
+    function SvcController(svcService, favoriteService, $log, $scope, $mdToast) {
         //////////////////
         // Initialization
         //////////////////
@@ -17,25 +17,20 @@
             .loadAllServices()
             .then(function (payload) {
                 var services = payload.data;
-                services.forEach(function (service) {
-                    if (service.status === 'started') {
-                        service.isStarted = true;
-                    } else {
-                        service.isStarted = false;
-                    }
-                });
                 $scope.services = [].concat(services);
             })
             .then(function () {
-                async.eachLimit($scope.services, 10,function iterator(item, callback){
-                    $log.debug('Getting details for ', item.name);
+                async.eachLimit($scope.services, 10, function iterator(item, callback) {
+                    $log.debug('Getting details for', item.name);
                     svcService.getDetails(item)
                         .then(function (payload) {
                             var updatedService = payload.data;
-                            $log.debug('Got details for ', updatedService.name);
+                            $log.debug('Got details for', updatedService.name);
                             for (var i = 0; i < $scope.services.length; i++) {
                                 if ($scope.services[i].name === updatedService.name) {
-
+                                    $log.debug('Updating scope for ', updatedService.name);
+                                    //for (var k in updatedService)
+                                    // $scope.services[i][k] = updatedService[k];
                                     $scope.services[i] = updatedService;
                                     callback(null);
                                     return;
@@ -43,30 +38,41 @@
                             }
                             $log.warn(item.name, 'was not found');
 
-                        }, function(errorReason){
+                        }, function (errorReason) {
                             $log.error('Could not get details:', errorReason);
                             callback(errorReason);
-                        })
+                        });
 
                 })
             });
 
         $scope.toggle = function (service) {
             if (service.status != undefined) {
-                if (service.status === 'started') {
-                    service.status = 'stopped';
-                } else if (service.status === 'stopped') {
-                    service.status = 'started';
-                }
+
                 svcService
                     .update(service)
                     .then(function () {
                         $mdToast.show(
                             $mdToast.simple()
-                                .content('Service is now ' + service.status)
+                                .content('The service ' + (service.displayName || service.name)
+                                + ' is now ' + service.status)
                                 .hideDelay(3000)
                         );
-                    })
+                    }, function (errorReason) {
+                        $log.error('Could not update the service:', errorReason);
+                        $mdToast.show(
+                            $mdToast.simple()
+                                .content('Could not update the service ' + (service.displayName || service.name))
+                                .theme('error-toast')
+                                .hideDelay(3000)
+                        );
+                        //restore the service
+                        if (service.status === 'started') {
+                            service.status = 'stopped';
+                        } else if (service.status === 'stopped') {
+                            service.status = 'started';
+                        }
+                    });
 
             }
         }
@@ -78,7 +84,7 @@
                     .then(function () {
                         $mdToast.show(
                             $mdToast.simple()
-                                .content('Service is deleted from favorites')
+                                .content('The service ' + (service.displayName || service.name) +' is deleted from favorites')
                                 .hideDelay(3000)
                         );
                     });
@@ -89,7 +95,7 @@
                     .then(function () {
                         $mdToast.show(
                             $mdToast.simple()
-                                .content('Service is added to favorites')
+                                .content('The service ' + (service.displayName || service.name) +' is added to favorites')
                                 .hideDelay(3000)
                         );
                     });
