@@ -4,6 +4,7 @@
         .module('app.services')
         .controller('svcController', [
             'svcService','favoriteService', '$log', '$q', '$scope', '$mdToast',
+
             SvcController
         ]);
 
@@ -14,7 +15,8 @@
         // Load all services
         svcService
             .loadAllServices()
-            .then(function (services) {
+            .then(function (payload) {
+                var services = payload.data;
                 services.forEach(function (service) {
                     if (service.status === 'started') {
                         service.isStarted = true;
@@ -23,6 +25,30 @@
                     }
                 });
                 $scope.services = [].concat(services);
+            })
+            .then(function () {
+                async.eachLimit($scope.services, 10,function iterator(item, callback){
+                    $log.debug('Getting details for ', item.name);
+                    svcService.getDetails(item)
+                        .then(function (payload) {
+                            var updatedService = payload.data;
+                            $log.debug('Got details for ', updatedService.name);
+                            for (var i = 0; i < $scope.services.length; i++) {
+                                if ($scope.services[i].name === updatedService.name) {
+
+                                    $scope.services[i] = updatedService;
+                                    callback(null);
+                                    return;
+                                }
+                            }
+                            $log.warn(item.name, 'was not found');
+
+                        }, function(errorReason){
+                            $log.error('Could not get details:', errorReason);
+                            callback(errorReason);
+                        })
+
+                })
             });
 
         $scope.toggle = function (service) {

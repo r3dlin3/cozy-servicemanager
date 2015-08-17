@@ -12,8 +12,8 @@
      * @returns {{loadAll: Function}}
      * @constructor
      */
-    function SvcService($q) {
-        var baseurl = '/services'
+    function SvcService($http) {
+        var baseUrl = '/services';
 
         // Promise-based API
         return {
@@ -23,7 +23,7 @@
             update: function (service) {
                 return $http.put(baseUrl + '/' + service.name, service);
             },
-            getDetails: function () {
+            getDetails: function (service) {
                 return $http.get(baseUrl + '/' + service.name);
             }
         };

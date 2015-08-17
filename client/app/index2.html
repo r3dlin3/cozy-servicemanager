@@ -67,7 +67,7 @@
                         </div>
                         <md-switch class="md-secondary"
                                    ng-model="service.isStarted"
-                                   ng-disabled="service.status==undefined"
+                                   ng-disabled="service.status==undefined || service.enable == false"
                                    ng-change="toggle(service)"/>
                     </md-list-item>
                 </md-list>
@@ -82,7 +82,8 @@
 <script src="./bower_components/angular-animate/angular-animate.js"></script>
 <script src="./bower_components/angular-aria/angular-aria.js"></script>
 <script type="text/javascript"
-        src="./bower_components/angular-material/angular-material.js"></script>
+src="./bower_components/angular-material/angular-material.js"></script>
+<script src="./bower_components/async/lib/async.js"></script>
 
 <script src="./src/services/Services.js"></script>
 <script src="./src/services/SvcController.js"></script>
