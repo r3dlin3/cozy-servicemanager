@@ -9,7 +9,7 @@ module.exports = {
                 dumpExceptions: true,
                 showStack: true
             }),
-            americano.static(__dirname + '/../client/public', {
+            americano.static(__dirname + '/../client/app', {
                 maxAge: 86400000
             })
         ],
