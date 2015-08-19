@@ -13,8 +13,11 @@ describe('ServiceManagerFactory', function () {
             serviceManager = factory.createServiceManager();
             switch (os.platform()) {
                 case 'win32':
-                    serviceName = 'wuauserv' // Windows update.
+                    serviceName = 'wuauserv'; // Windows update.
                     // Should be available on every Windows
+                    break;
+                case 'linux':
+                    serviceName = 'cron';
                     break;
                 default:
                     throw 'Platform unknown';

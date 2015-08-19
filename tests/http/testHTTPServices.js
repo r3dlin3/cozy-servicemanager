@@ -12,6 +12,9 @@ describe('HTTP tests', function () {
                 serviceName = 'wuauserv' // Windows update.
                 // Should be available on every Windows
                 break;
+            case 'linux':
+                serviceName = 'cron';
+                break;
             default:
                 throw 'Platform unknown';
         }

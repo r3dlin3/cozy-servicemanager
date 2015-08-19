@@ -1,9 +1,11 @@
 var americano = require('americano');
+var expressValidator = require('express-validator');
 
 module.exports = {
     common: {
         use: [
             americano.bodyParser(),
+            expressValidator(),
             americano.methodOverride(),
             americano.errorHandler({
                 dumpExceptions: true,
@@ -19,5 +21,8 @@ module.exports = {
     ],
     production: [
         americano.logger('short')
+    ],
+    plugins: [
+        'cozydb'
     ]
 };

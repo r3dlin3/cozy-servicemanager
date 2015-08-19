@@ -1,4 +1,5 @@
 var services = require('./services');
+var favorite = require('./favorite');
 
 
 module.exports = {
@@ -10,5 +11,15 @@ module.exports = {
     'services/:name': {
         get: services.get,
         put: services.update
-    }
+    },
+
+    'favorites': {
+        get: favorite.list,
+        post: favorite.create
+    },
+
+    'favorites/:name': {
+        delete: favorite.delete,
+
+    },
 };

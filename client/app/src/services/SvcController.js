@@ -52,21 +52,16 @@
                 svcService
                     .update(service)
                     .then(function () {
-                        $mdToast.show(
-                            $mdToast.simple()
-                                .content('The service ' + (service.displayName || service.name)
-                                + ' is now ' + service.status)
-                                .hideDelay(3000)
-                        );
+                        $mdToast.showSimple('The service ' + (service.displayName || service.name)
+                            + ' is now ' + service.status);
                     }, function (errorReason) {
                         $log.error('Could not update the service:', errorReason);
                         $mdToast.show(
                             $mdToast.simple()
                                 .content('Could not update the service ' + (service.displayName || service.name))
                                 .theme('error-toast')
-                                .hideDelay(3000)
                         );
-                        //restore the service
+                        //restore the service status
                         if (service.status === 'started') {
                             service.status = 'stopped';
                         } else if (service.status === 'stopped') {
@@ -82,22 +77,15 @@
                 favoriteService
                     .delete(service)
                     .then(function () {
-                        $mdToast.show(
-                            $mdToast.simple()
-                                .content('The service ' + (service.displayName || service.name) +' is deleted from favorites')
-                                .hideDelay(3000)
-                        );
+                        $mdToast.showSimple('The service ' + (service.displayName || service.name) +' is deleted from favorites')
+
                     });
             } else {
                 service.isFavorite = true;
                 favoriteService
                     .add(service)
                     .then(function () {
-                        $mdToast.show(
-                            $mdToast.simple()
-                                .content('The service ' + (service.displayName || service.name) +' is added to favorites')
-                                .hideDelay(3000)
-                        );
+                        $mdToast.showSimple( 'The service ' + (service.displayName || service.name) +' is added to favorites')
                     });
             }
 

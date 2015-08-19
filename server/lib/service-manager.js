@@ -1,8 +1,11 @@
 var os = require('os');
+var fs = require('fs');
+var path = require('path');
 var printit = require('printit');
 var spawn = require('child_process').spawn;
 var exec = require('child_process').exec;
 var readline = require('readline');
+var Q = require('q');
 var log = printit({
     prefix: 'cozy-servicemanager',
     date: true
@@ -10,6 +13,7 @@ var log = printit({
 
 var STATUS_STARTED = 'started';
 var STATUS_STOPPED = 'stopped';
+var STATUS_UNKNOWN = 'unknown';
 
 /**
  *
@@ -28,6 +32,8 @@ ServiceManagerFactory.prototype.createServiceManager = function () {
     switch (os.platform()) {
         case 'win32':
             return new WindowsServiceManager();
+        case 'linux':
+            return new LinuxServiceManager();
         default:
             throw 'Platform unknown';
     }
@@ -107,7 +113,7 @@ WindowsServiceManager.prototype.getAll = function (callback) {
         // skip everything else
 
     }).on('close', function () {
-        callback(services.slice(0,2));
+        callback(services.slice(0, 2));
     });
 
 
@@ -234,18 +240,24 @@ WindowsServiceManager.prototype._getConfiguration = function (service, callback)
 WindowsServiceManager.prototype.start = function (name, callback) {
     log.debug('Starting ' + name);
     WindowsServiceManager.prototype._getService(name, function (service, err) {
-        if (err) { callback(null, err); return;}
-        if (!service) { callback(null, "Service unknown"); return;}
+        if (err) {
+            callback(null, err);
+            return;
+        }
+        if (!service) {
+            callback(null, "Service unknown");
+            return;
+        }
 
         if (service.status === STATUS_STARTED) {
             log.info("Service " + name + " is already started");
             callback(null);
             return;
         }
-        var cmd = 'net start "'+name+'"';
-        log.debug('cmd to execure: ', cmd);
+        var cmd = 'net start "' + name + '"';
+        log.debug('cmd to execute: ', cmd);
 
-        exec(cmd, function(err, stdout, stderr) {
+        exec(cmd, function (err, stdout, stderr) {
             if (err) {
                 callback(err);
             }
@@ -284,5 +296,217 @@ WindowsServiceManager.prototype.stop = function (name, callback) {
     });
 };
 
+
+function LinuxServiceManager() {
+
+}
+LinuxServiceManager.prototype.mapStatus = function (state) {
+    switch (state) {
+        case 0:
+            return STATUS_STARTED;
+        case 1:
+        case 2:
+        case 3:
+            return STATUS_STOPPED;
+        case 4:
+            return STATUS_UNKNOWN;
+        default:
+            throw "Unknown status " + state;
+    }
+};
+
+LinuxServiceManager.prototype.getAll = function (callback) {
+    var services = [];
+    var service = {};
+    var proc = spawn('service', [
+        '--status-all',
+    ]);
+    /*  Exemple of output of this command
+
+     [ ? ]  checkfs.sh
+     [ ? ]  checkroot-bootclean.sh
+     [ - ]  checkroot.sh
+     [ - ]  console-setup
+     [ + ]  cron
+
+     */
+
+    readline.createInterface({
+        input: proc.stdout,
+        terminal: false
+    }).on('line', function (line) {
+        log.debug(line);
+
+        if (/\[\s+(.*)\s+\]\s+(.*)/.test(line)) {
+            var status = RegExp.$1;
+            var name = RegExp.$2;
+            log.debug('Service : ' + name);
+            log.debug('Status : ' + status);
+            service = {name: name};
+            switch (status){
+                case "-":
+                    service.status = STATUS_STOPPED;
+                    break;
+                case "+":
+                    service.status = STATUS_STARTED;
+                    break;
+                case "?":
+                    service.status = STATUS_UNKNOWN;
+                    break;
+                default:
+                    callback(null, new Error('Unknown status'));
+            }
+            services.push(service);
+        }
+
+        // skip everything else
+
+    }).on('close', function () {
+        callback(services.slice(0, 2));
+    });
+
+
+};
+
+LinuxServiceManager.prototype.getDetails = function (name, callback) {
+    LinuxServiceManager.prototype._getStatus(name)
+        .then(LinuxServiceManager.prototype._parseInitFile)
+        .then(function (service) {
+            callback(service, null);
+        })
+        .catch(function (error) {
+            callback(null, error);
+        });
+};
+
+LinuxServiceManager.prototype._parseInitFile = function (service) {
+    var deferred = Q.defer();
+    var initFile = path.join('/etc/init.d', service);
+    var input = fs.createReadStream(initFile);
+
+    /**
+     From /etc/init.d/skeleton :
+
+     # Provides:          skeleton
+     # Required-Start:    $remote_fs $syslog
+     # Required-Stop:     $remote_fs $syslog
+     # Default-Start:     2 3 4 5
+     # Default-Stop:      0 1 6
+     # Short-Description: Example initscript
+     # Description:       This file should be used to construct scripts to be
+     #                    placed in /etc/init.d.
+
+     */
+    readline.createInterface({
+        input: input,
+        terminal: false
+    }).on('line', function (line) {
+        if (/Short-Description:\s+(.*)/.test(line)) {
+            var desc = RegExp.$1;
+            service.displayName=desc;
+        }
+        // skip everything else
+    }).on('close', function () {
+        deferred.resolve(service);
+    });
+};
+
+/**
+ * Wrapper around promise to execute a command and resolve/return the exit
+ * code status
+ * @param cmd
+ * @return {!promise.Promise.<T>}
+ * @private
+ */
+LinuxServiceManager.prototype._getExitCode = function (cmd) {
+    log.info("Executing", cmd);
+    var deferred = Q.defer();
+    exec(cmd, function (err, stdout, stderr) {
+
+    }).on('exit', function (code, signal) {
+        // only interesting in the exit code!
+        console.debug("Status exit code for'", cmd, "'=", code);
+
+        deferred.resolve(code);
+    });
+
+    return deferred.promise;
+}
+
+/**
+ *
+ * @param name
+ * @return a promise which resolve a JSON structure wih name and status
+ * properties
+ * @private
+ */
+LinuxServiceManager.prototype._getStatus = function (name) {
+    log.debug('Getting status for', name);
+    var cmd = 'service ' + name + ' status';
+    log.info("Executing", cmd);
+    return LinuxServiceManager.prototype._getExitCode(cmd)
+        .then(function (code) {
+            var service = {
+                name: name,
+                status: LinuxServiceManager.prototype.mapStatus(code)
+            };
+
+            return service;
+        }
+    )
+
+};
+
+LinuxServiceManager.prototype.start = function (name, callback) {
+    log.debug('Starting ' + name);
+    LinuxServiceManager.prototype._getStatus(name)
+        .then(function (service) {
+            if (service.status === STATUS_STARTED) {
+                log.info("Service " + name + " is already started");
+                callback(null);
+                return;
+            }
+            var cmd = 'sudo service "' + name + '" start';
+            LinuxServiceManager.prototype._getExitCode(cmd)
+                .then(function (code) {
+                    if (code != 0) {
+                        callback(null, new Error("Could not start " + name));
+                    } else {
+                        log.info('Service', name, 'started');
+                        callback(null);
+                    }
+                });
+
+        })
+        .catch(function (error) {
+            callback(null, error);
+        });
+};
+
+LinuxServiceManager.prototype.stop = function (name, callback) {
+    log.debug('Stopping ' + name);
+    LinuxServiceManager.prototype._getStatus(name)
+        .then(function (service) {
+            if (service.status === STATUS_STOPPED) {
+                log.info("Service " + name + " is already stopped");
+                callback(null);
+                return;
+            }
+            var cmd = 'sudo service "' + name + '" stop';
+            LinuxServiceManager.prototype._getExitCode(cmd)
+                .then(function (code) {
+                    if (code != 0) {
+                        callback(null, new Error("Could not start " + name));
+                    } else {
+                        log.info('Service', name, 'stopped');
+                        callback(null);
+                    }
+                });
+
+        })
+        .catch(function (error) {
+            callback(null, error);
+        });
+};
 
 module.exports = ServiceManagerFactory;

@@ -7,8 +7,10 @@
   },
   "dependencies": {
     "americano": "0.4.2",
+    "cozydb": "0.0.20",
     "express-validator": "^2.14.2",
-    "printit": "0.1.8"
+    "printit": "0.1.8",
+    "q": "^1.4.1"
   },
   "devDependencies": {
     "chai": "3.2.0",
@@ -20,5 +22,6 @@
     "type": "git",
     "url": "https://github.com/r3dlin3/cozy-servicemanager.git"
   },
-  "readmeFilename": "README.md"
+  "readmeFilename": "README.md",
+  "cozy-displayName": "Service Manager"
 }
